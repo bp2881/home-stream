@@ -4,7 +4,7 @@ import json
 
 
 def convert_to_mp4():
-    VIDEO_DIR = "videos/"
+    VIDEO_DIR = "media/"
     UNSUPPORTED_EXTS = ('.mkv', '.flv', '.avi', '.wmv', '.mov', '.mpeg', '.mpg', '.ts', '.vob', '.3gp', '.rm', '.rmvb')
 
     for file in os.listdir(VIDEO_DIR):
@@ -43,7 +43,7 @@ def convert_to_mp4():
             print(f"Error converting: {file}")
 
 def list_videos():
-    VIDEO_DIR = "videos/"
+    VIDEO_DIR = "media/"
     video_list = []
 
     for file in os.listdir(VIDEO_DIR):
