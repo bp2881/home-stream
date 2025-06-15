@@ -37,7 +37,7 @@ def convert_to_mp4():
         try:
             subprocess.run(command, check=True)
             # Remove the original file
-            os.remove(full_path)
+            #os.remove(full_path)
             print(f"Done: {os.path.basename(output_file)}")
         except subprocess.CalledProcessError:
             print(f"Error converting: {file}")
