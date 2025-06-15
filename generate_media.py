@@ -28,12 +28,11 @@ def convert_to_mp4():
         command = [
             "ffmpeg",
             "-i", full_path,
-            "-map", "0",
-            "-c", "copy",
-            "-avoid_negative_ts", "make_zero",
+            "-threads", "4",
+            "-codec", "copy",
             output_file
         ]
-
+        # ffmpeg -i LostInTranslation.mkv -codec copy LostInTranslation.mp4
         try:
             subprocess.run(command, check=True)
             # Remove the original file
