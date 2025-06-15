@@ -2,11 +2,15 @@ import os
 import subprocess
 import json
 
+VIDEO_DIR = "media/"
+VIDEO_URL_PREFIX = "/media/"
+UNSUPPORTED_EXTS = (
+    '.mkv', '.flv', '.avi', '.wmv', '.mov', '.mpeg',
+    '.mpg', '.ts', '.vob', '.3gp', '.rm', '.rmvb'
+)
+
 
 def convert_to_mp4():
-    VIDEO_DIR = "media/"
-    UNSUPPORTED_EXTS = ('.mkv', '.flv', '.avi', '.wmv', '.mov', '.mpeg', '.mpg', '.ts', '.vob', '.3gp', '.rm', '.rmvb')
-
     for file in os.listdir(VIDEO_DIR):
         full_path = os.path.join(VIDEO_DIR, file)
 
@@ -16,7 +20,7 @@ def convert_to_mp4():
         if not file.lower().endswith(UNSUPPORTED_EXTS):
             continue
 
-        base, ext = os.path.splitext(full_path)
+        base, _ = os.path.splitext(full_path)
         output_file = base + ".mp4"
 
         if os.path.exists(output_file):
@@ -24,25 +28,24 @@ def convert_to_mp4():
             continue
 
         print(f"Converting: {file} to {os.path.basename(output_file)}")
-
         command = [
-            "ffmpeg",
-            "-i", full_path,
+            "ffmpeg", "-i", full_path,
             "-threads", "4",
             "-codec", "copy",
+            "-movflags", "faststart",  # ensure fast playback
             output_file
         ]
-        # ffmpeg -i LostInTranslation.mkv -codec copy LostInTranslation.mp4
+
         try:
             subprocess.run(command, check=True)
-            # Remove the original file
-            #os.remove(full_path)
+            # Optionally remove original:
+            # os.remove(full_path)
             print(f"Done: {os.path.basename(output_file)}")
         except subprocess.CalledProcessError:
             print(f"Error converting: {file}")
 
+
 def list_videos():
-    VIDEO_DIR = "media/"
     video_list = []
 
     for file in os.listdir(VIDEO_DIR):
@@ -54,9 +57,15 @@ def list_videos():
         if not file.lower().endswith('.mp4'):
             continue
 
-        video_list.append(file)
+        video_list.append(VIDEO_URL_PREFIX + file)
 
     with open("./static/videos.json", "w") as out:
         json.dump({"videos": video_list}, out)
 
-    print(f"Video list saved to video_list.json with {len(video_list)} entries.")
+    print(f"Video list saved with {len(video_list)} entries.")
+
+
+# If run directly, regenerate video list
+if __name__ == "__main__":
+    convert_to_mp4()
+    list_videos()
