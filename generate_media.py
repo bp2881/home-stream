@@ -59,7 +59,7 @@ def list_videos():
 
         video_list.append(VIDEO_URL_PREFIX + file)
 
-    with open("./static/videos.json", "w") as out:
+    with open("./videos.json", "w") as out:
         json.dump({"videos": video_list}, out)
 
     print(f"Video list saved with {len(video_list)} entries.")
