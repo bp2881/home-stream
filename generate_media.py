@@ -56,8 +56,7 @@ def list_videos():
             continue
 
         video_info = {
-            "name": file,
-            "url": VIDEO_URL_PREFIX + file
+            f"{file}": VIDEO_URL_PREFIX + file
         }
 
         with open("videos.json", "w") as file:
