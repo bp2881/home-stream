@@ -9,7 +9,10 @@
 	</head>
 	<body>
 		<h1>Movies List</h1>
-		<p>{{movies["name"]}}</p>
-		<p>{{movies["url"]}}</p>
+		<p>Here is a list of movies:</p>
+		{% for movies in movies_list %}
+		<p>{{ loop.index }}. {{ movies["name"] }}</p>
+		<p>URL: <a href="{{ movies['url'] }}">{{ movies['url'] }}</a></p>
+		{% endfor %}
 	</body>
 </html>

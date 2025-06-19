@@ -46,7 +46,6 @@ def convert_to_mp4():
 
 
 def list_videos():
-    video_list = []
     for file in os.listdir(VIDEO_DIR):
         full_path = os.path.join(VIDEO_DIR, file)
 
@@ -60,10 +59,9 @@ def list_videos():
             "name": file,
             "url": VIDEO_URL_PREFIX + file
         }
-        video_list.append(video_info)
 
         with open("videos.json", "w") as file:
-            json.dump(video_list, file, indent=4)
+            json.dump(video_info, file, indent=4)
     
 
 
