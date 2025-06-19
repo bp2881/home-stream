@@ -9,10 +9,6 @@ def index():
     movie_list = json.load(open("./videos.json", "r")) 
     return render_template('index.html', movies=movie_list)
 
-@app.route('/media/<path:filename>')
-def media(filename):
-    return send_from_directory('media', filename)
-
 @app.route("/Watching")
 def movies():
     return render_template("watch.html")
