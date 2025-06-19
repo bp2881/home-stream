@@ -10,7 +10,6 @@
 	<body>
 		<h1>Movies List</h1>
 		<p>Here is a list of movies:</p>
-                {{movies["name"]}}
 		{% for movie_name, movie_url in movies.items() %}
 		<p>{{ loop.index }}. {{ movie_name }}</p>
 		<p>URL: <a href="{{ movie_url }}">{{ movie_url }}</a></p>
