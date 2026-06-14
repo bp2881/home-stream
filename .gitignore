@@ -1,5 +1,9 @@
 *.json
-media
+.venv/
+media/
+cache/
+__pycache__/
+*.pyc
 __*/*
 *.ts
 *.mp4

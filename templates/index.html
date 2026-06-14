@@ -1,18 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1.0" />
-		<title>Movies List</title>
-	</head>
-	<body>
-		<h1>Movies List</h1>
-		<p>Here is a list of movies:</p>
-		{% for movie_name, movie_url in movies.items() %}
-		<p>{{ loop.index }}. {{ movie_name }}</p>
-		<p>URL: <a href="{{ movie_url }}">{{ movie_url }}</a></p>
-		{% endfor %}
-	</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Library — HOME-STREAM{% endblock %}
+{% block content %}
+<main class="library">
+  <div class="library-header">
+    <h1>Your Library</h1>
+    <span class="library-count">{{ items | length }} title{{ 's' if items | length != 1 }}</span>
+  </div>
+  <div class="card-grid" id="card-grid">
+    {% if not items %}
+    <div class="empty-state">
+      <h2>No videos found</h2>
+      <p>Drop your media files into the <code>media/</code> folder and hit <strong>Refresh</strong>.</p>
+    </div>
+    {% else %}
+    {% for item in items %}
+    <a class="card {% if item.converting %}card--converting{% endif %}"
+       href="{% if not item.converting %}/watch/{{ item.id }}{% else %}javascript:void(0){% endif %}"
+       id="card-{{ item.id }}"
+       title="{{ item.title }}">
+      <div class="card-thumb">
+        <img src="{{ item.thumb_url }}"
+             alt="{{ item.title }}"
+             loading="lazy"
+             onerror="this.style.display='none';this.parentNode.querySelector('.card-thumb-placeholder').style.display='flex';" />
+        <div class="card-thumb-placeholder" style="display:none;">🎬</div>
+        {% if item.converting %}
+        <div class="card-overlay card-overlay--processing">
+          <div class="spinner"></div>
+          <span>Processing…</span>
+        </div>
+        {% else %}
+        <div class="card-overlay">
+          <span class="play-icon">▶</span>
+        </div>
+        {% endif %}
+      </div>
+      <div class="card-info">
+        <h3 class="card-title">{{ item.title }}</h3>
+        {% if item.duration > 0 %}
+        <span class="card-duration">{{ item.duration | duration }}</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
+{% block scripts %}
+<script>
+  // ── Client-side search (zero network) ──────────────────────────────────────
+  const searchInput = document.getElementById("search-input");
+  const cards = document.querySelectorAll("#card-grid .card");
+  searchInput.addEventListener("input", function () {
+    const q = this.value.toLowerCase().trim();
+    cards.forEach(function (card) {
+      const title = (card.querySelector(".card-title") || {}).textContent || "";
+      card.style.display = (!q || title.toLowerCase().includes(q)) ? "" : "none";
+    });
+  });
+  // ── Poll for converting items every 6s ────────────────────────────────────
+  var convertingCards = document.querySelectorAll(".card--converting");
+  if (convertingCards.length > 0) {
+    var pollTimer = setInterval(function () {
+      fetch("/api/library")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var stillConverting = false;
+          data.forEach(function (item) {
+            if (!item.converting) return;
+            stillConverting = true;
+          });
+          // If any previously-converting item is now done, reload
+          var changed = data.some(function (item) {
+            var card = document.getElementById("card-" + item.id);
+            return card && card.classList.contains("card--converting") && !item.converting;
+          });
+          if (changed) {
+            clearInterval(pollTimer);
+            location.reload();
+          }
+          if (!stillConverting) clearInterval(pollTimer);
+        })
+        .catch(function () { /* ignore */ });
+    }, 6000);
+  }
+</script>
+{% endblock %}

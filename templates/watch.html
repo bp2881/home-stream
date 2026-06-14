@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} — HOME-STREAM{% endblock %}
+{% block content %}
+<div class="player-page">
+  <div class="player-container" id="player-container">
+    <video id="video" preload="auto" crossorigin="anonymous">
+      <source src="/stream/{{ item.id }}" type="video/mp4" />
+      {% for sub in item.sub_tracks %}
+      <track kind="subtitles"
+             src="/subs/{{ item.id }}/{{ sub.index }}"
+             label="{{ sub.label }}"
+             srclang="{{ sub.language }}" />
+      {% endfor %}
+    </video>
+    <div class="osd" id="osd"></div>
+    <div class="controls" id="controls">
+      <div class="progress-bar" id="progress-bar">
+        <div class="progress-buffered" id="progress-buffered"></div>
+        <div class="progress-played"   id="progress-played"></div>
+        <div class="progress-thumb"    id="progress-thumb"></div>
+      </div>
+      <div class="controls-row">
+        <button class="ctrl-btn" id="btn-play"      title="Play/Pause (k)">▶</button>
+        <button class="ctrl-btn ctrl-btn--skip" id="btn-skip-back" title="Back 10s (j)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="7" y="16" font-size="5" fill="currentColor">10</text></svg>
+        </button>
+        <button class="ctrl-btn ctrl-btn--skip" id="btn-skip-fwd"  title="Forward 10s (l)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="7" y="16" font-size="5" fill="currentColor">10</text></svg>
+        </button>
+        <div class="volume-group">
+          <button class="ctrl-btn" id="btn-mute" title="Mute (m)">🔊</button>
+          <div class="volume-slider-wrap">
+            <input type="range" class="custom-slider" id="volume-slider" min="0" max="1" step="0.01" value="1" />
+          </div>
+        </div>
+        <div class="time-display">
+          <span id="time-current">0:00</span>
+          <span class="time-sep">/</span>
+          <span id="time-total">0:00</span>
+        </div>
+        <div class="spacer"></div>
+        {% if item.sub_tracks %}
+        <div class="cc-wrapper" id="cc-wrapper">
+          <button class="ctrl-btn ctrl-btn--cc" id="btn-cc" title="Subtitles (c)">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 8H9.5v-.5h-2v3h2V14H11v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2V14H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/>
+            </svg>
+          </button>
+          <div class="cc-popup" id="cc-popup">
+            <div class="cc-option cc-option--active" data-idx="-1">Off</div>
+            {% for sub in item.sub_tracks %}
+            <div class="cc-option" data-idx="{{ loop.index0 }}">{{ sub.label }} ({{ sub.language }})</div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="cc-wrapper" id="settings-wrapper">
+          <button class="ctrl-btn" id="btn-settings" title="Settings">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+            </svg>
+          </button>
+          <div class="cc-popup" id="settings-popup">
+            <div class="settings-group">
+              <div class="settings-title">
+                Speed <span class="settings-val" id="speed-val">1.0x</span>
+              </div>
+              <input type="range" class="settings-slider custom-slider" id="speed-slider" min="0.25" max="3" step="0.25" value="1" />
+            </div>
+            <div class="settings-group">
+              <div class="settings-title">
+                Subtitle Size <span class="settings-val" id="subsize-val">100%</span>
+              </div>
+              <input type="range" class="settings-slider custom-slider" id="subsize-slider" min="50" max="300" step="10" value="100" />
+            </div>
+          </div>
+        </div>
+        <button class="ctrl-btn" id="btn-fullscreen" title="Fullscreen (f)">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+            <path id="fs-icon-path" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="video-meta">
+    <a href="/" class="back-link">← Library</a>
+    <h1>{{ item.title }}</h1>
+    {% if item.duration > 0 %}<p class="meta-duration">{{ item.duration | duration }}</p>{% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // Pass subtitle track count to JS
+  window.TRACK_COUNT = {{ item.sub_tracks | length }};
+</script>
+<script src="/static/player.js"></script>
+{% endblock %}
