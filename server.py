@@ -59,6 +59,29 @@ def stream(media_id: str):
     length = end - start + 1
     ext    = os.path.splitext(path)[1].lower()
     mime   = "video/webm" if ext == ".webm" else "video/mp4"
+
+    # ── Nginx X-Accel-Redirect (zero-copy, no Python I/O) ─────────────────
+    # When behind Nginx, return only headers; Nginx serves the file via its
+    # internal /media-internal/ alias (kernel sendfile, aio threads).
+    # Nginx sets the X-Real-IP header on proxied requests; use it as a signal.
+    if request.headers.get("X-Real-IP") or os.environ.get("HOMESTREAM_BEHIND_NGINX"):
+        # Convert absolute fs path → Nginx internal URI:
+        #   /home/.../home-stream/cache/converted/abc.mp4
+        #   → /media-internal/cache/converted/abc.mp4
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        rel_path = os.path.relpath(path, project_root)
+        nginx_uri = f"/media-internal/{rel_path}"
+        resp = Response(status=status)
+        resp.headers["X-Accel-Redirect"]  = nginx_uri
+        resp.headers["X-Accel-Buffering"] = "yes"
+        resp.headers["Content-Type"]      = mime
+        resp.headers["Content-Length"]    = str(length)
+        resp.headers["Content-Range"]     = f"bytes {start}-{end}/{file_size}"
+        resp.headers["Accept-Ranges"]     = "bytes"
+        resp.headers["Cache-Control"]     = "no-store"
+        return resp
+
+    # ── Pure-Python fallback (dev server / no Nginx) ───────────────────────
     def generate():
         with open(path, "rb") as f:
             f.seek(start)
@@ -69,11 +92,13 @@ def stream(media_id: str):
                     break
                 remaining -= len(chunk)
                 yield chunk
+
     headers = {
         "Content-Range":  f"bytes {start}-{end}/{file_size}",
         "Accept-Ranges":  "bytes",
         "Content-Length": str(length),
         "Content-Type":   mime,
+        "Cache-Control":  "no-store",
     }
     return Response(generate(), status=status, headers=headers)
 @app.route("/thumb/<media_id>")
