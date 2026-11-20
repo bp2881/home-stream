@@ -48,6 +48,27 @@ def _nice_title(filename: str) -> str:
     name = re.sub(r"[\._]", " ", name)
     name = re.sub(r"\s+", " ", name).strip()
     return name
+def _has_faststart(path: str) -> bool:
+    """Return True if the mp4 moov atom appears before mdat (web-optimised)."""
+    try:
+        with open(path, "rb") as f:
+            while True:
+                size_bytes = f.read(4)
+                if len(size_bytes) < 4:
+                    return False
+                size = int.from_bytes(size_bytes, "big")
+                name = f.read(4)
+                if len(name) < 4:
+                    return False
+                if name == b"moov":
+                    return True
+                if name == b"mdat":
+                    return False  # mdat before moov → not faststart
+                if size < 8:
+                    return False
+                f.seek(size - 8, 1)
+    except Exception:
+        return False
 def _run(cmd: list, timeout: Optional[int] = 60) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
 def _probe_media(path: str) -> Optional[dict]:
@@ -203,7 +224,21 @@ def _build_item(abs_path: str) -> Optional[MediaItem]:
             converting = True
             transcode  = False
     else:
-        playable = abs_path
+        # Native ext + browser-safe codec.
+        # Serve directly only if moov atom is already at the front (faststart).
+        # If not, remux into cache/converted/ so the browser can seek and read duration.
+        if _has_faststart(abs_path):
+            playable = abs_path
+        else:
+            log.info("MP4 missing faststart, will remux: %s", abs_path)
+            os.makedirs(CONVERTED_DIR, exist_ok=True)
+            converted_path = os.path.join(CONVERTED_DIR, f"{media_id}.mp4")
+            if os.path.exists(converted_path):
+                playable = converted_path
+            else:
+                playable   = converted_path
+                converting = True
+                transcode  = False  # remux only (codec copy + faststart)
     try:
         _extract_thumbnail(abs_path, thumb_path)
     except Exception as exc:
